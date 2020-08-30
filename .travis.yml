@@ -1,0 +1,24 @@
+sudo: required
+services:
+    - docker
+
+before_install:
+    - docker build -t aparnabhure/react-test -f ./client/Dockerfile.dev ./client
+    
+script:
+    - docker run -e CI=true aparnabhure/react-test npm test -- --coverage
+
+after_success:
+    - docker build -t aparnabhure/multi-client ./client
+    - docker build -t aparnabhure/multi-nginx ./nginx
+    - docker build -t aparnabhure/multi-server ./server
+    - docker build -t aparnabhure/multi-worker ./worker
+
+    # Login to docker cli
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+    # Take images and push to docker hub
+    - docker push aparnabhure/multi-client
+    - docker push aparnabhure/multi-nginx
+    - docker push aparnabhure/multi-server
+    - docker push aparnabhure/multi-worker
